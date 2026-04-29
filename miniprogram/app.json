@@ -1,0 +1,31 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/stretch/stretch",
+    "pages/chat/chat",
+    "pages/fatigue/fatigue",
+    "pages/weekly/weekly"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#0f1117",
+    "navigationBarTitleText": "羽后伸",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0f1117"
+  },
+  "tabBar": {
+    "color": "#666",
+    "selectedColor": "#00d4ff",
+    "backgroundColor": "#0f1117",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/home/home",    "text": "首页",   "iconPath": "assets/icons/home.png",    "selectedIconPath": "assets/icons/home-active.png" },
+      { "pagePath": "pages/stretch/stretch", "text": "拉伸", "iconPath": "assets/icons/stretch.png", "selectedIconPath": "assets/icons/stretch-active.png" },
+      { "pagePath": "pages/chat/chat",    "text": "问答",   "iconPath": "assets/icons/chat.png",    "selectedIconPath": "assets/icons/chat-active.png" },
+      { "pagePath": "pages/fatigue/fatigue", "text": "疲劳测", "iconPath": "assets/icons/fatigue.png", "selectedIconPath": "assets/icons/fatigue-active.png" },
+      { "pagePath": "pages/weekly/weekly", "text": "周计划", "iconPath": "assets/icons/weekly.png",  "selectedIconPath": "assets/icons/weekly-active.png" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

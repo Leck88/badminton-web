@@ -1,0 +1,97 @@
+<!--拉伸方案页-->
+<view class="container" wx:if="{{!plan}}">
+  <view class="page-title">🧘 生成拉伸方案</view>
+
+  <!-- 时长 -->
+  <view class="card section">
+    <view class="section-title">⏱ 打球时长</view>
+    <view class="duration-display">
+      <text class="duration-val gradient-text">{{duration}}</text>
+      <text class="duration-unit">分钟</text>
+    </view>
+    <slider min="10" max="180" step="10" value="{{duration}}" activeColor="#00d4ff" backgroundColor="rgba(255,255,255,0.1)" block-color="#00d4ff" bindchange="onDurationChange" />
+    <view class="slider-labels"><text>10</text><text>90</text><text>180</text></view>
+  </view>
+
+  <!-- 强度 -->
+  <view class="card section">
+    <view class="section-title">💪 运动强度</view>
+    <view class="intensity-grid">
+      <view class="intensity-item {{intensity === item.value ? 'active' : ''}}"
+        wx:for="{{intensities}}" wx:key="index" bindtap="setIntensity" data-val="{{item.value}}">
+        <text class="intensity-emoji">{{item.emoji}}</text>
+        <text class="intensity-name">{{item.value}}</text>
+        <text class="intensity-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 部位 -->
+  <view class="card section">
+    <view class="section-title">🎯 不适部位（可多选）</view>
+    <view class="areas">
+      <view class="tag {{painAreas.includes(area) ? 'active' : ''}}"
+        wx:for="{{allAreas}}" wx:key="*this" wx:for-item="area" bindtap="toggleArea" data-area="{{area}}">
+        {{area}}
+      </view>
+    </view>
+    <text class="hint" wx:if="{{painAreas.length === 0}}">未选择时生成全身方案</text>
+  </view>
+
+  <button class="btn-primary" bindtap="generate" loading="{{loading}}" disabled="{{loading}}">
+    {{loading ? '正在编排方案...' : '🚀 生成我的专属方案'}}
+  </button>
+</view>
+
+<!-- 方案展示 -->
+<view class="container" wx:if="{{plan}}">
+  <view class="plan-header">
+    <text class="plan-title">{{plan.title}}</text>
+    <text class="plan-progress">{{currentIdx + 1}}/{{plan.actions.length}}</text>
+  </view>
+
+  <!-- 进度条 -->
+  <view class="progress-bar">
+    <view class="progress-fill" style="width: {{((currentIdx+1)/plan.actions.length)*100}}%"></view>
+  </view>
+
+  <!-- 当前动作 -->
+  <view class="card action-card" wx:if="{{currentAction}}">
+    <view class="action-center">
+      <text class="action-emoji">{{currentAction.emoji}}</text>
+      <text class="action-name">{{currentAction.name}}</text>
+      <view class="tag">{{currentAction.target_muscle}}</view>
+    </view>
+
+    <view class="steps">
+      <view class="step" wx:for="{{currentAction.steps}}" wx:key="index">
+        <view class="step-num">{{index+1}}</view>
+        <text class="step-text">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="notes" wx:if="{{currentAction.notes}}">
+      <text>💡 {{currentAction.notes}}</text>
+    </view>
+
+    <!-- 计时器 -->
+    <view class="timer-section">
+      <text class="timer-val gradient-text">{{timerRunning ? timer : currentAction.duration_seconds}}s</text>
+      <button class="btn-primary" bindtap="startTimer" wx:if="{{!timerRunning}}">
+        ▶ 开始计时 {{currentAction.duration_seconds}}秒
+      </button>
+      <text class="timer-tip" wx:if="{{timerRunning}}">保持动作，专注呼吸...</text>
+    </view>
+  </view>
+
+  <!-- 导航 -->
+  <view class="nav-btns">
+    <button class="btn-secondary" bindtap="prevAction" wx:if="{{currentIdx > 0}}">← 上一个</button>
+    <button class="btn-primary" bindtap="nextAction" wx:if="{{currentIdx < plan.actions.length - 1}}">下一个 →</button>
+    <button class="btn-primary finish-btn" bindtap="finish" wx:if="{{currentIdx >= plan.actions.length - 1}}">✅ 完成恢复！</button>
+  </view>
+
+  <view class="card advice">
+    <text class="advice-text">🌿 {{plan.overall_advice}}</text>
+  </view>
+</view>
