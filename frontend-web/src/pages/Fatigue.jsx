@@ -1,21 +1,111 @@
 import { useState } from 'react'
-import { assessFatigue } from '../api.js'
+
+// 本地疲劳计算逻辑（不依赖API）
+function calculateFatigueLocal(answers) {
+  const { squat_quality, shoulder_rotation, perceived_fatigue, sleep_quality } = answers
+
+  // 计算疲劳分数 (0-100)
+  let score = perceived_fatigue * 8 // 0-80
+
+  // 深蹲质量扣分
+  if (squat_quality === '流畅') score += 0
+  else if (squat_quality === '有点吃力') score += 10
+  else if (squat_quality === '很困难') score += 20
+
+  // 睡眠质量扣分
+  if (sleep_quality === '好') score += 0
+  else if (sleep_quality === '一般') score += 8
+  else if (sleep_quality === '差') score += 16
+
+  // 肩关节角度受限扣分 (正常90°)
+  const shoulderDeficit = Math.max(0, 90 - shoulder_rotation)
+  score += (shoulderDeficit / 90) * 16
+
+  // 判断疲劳等级
+  let level, recommendation, priority_areas, recovery_plan
+
+  if (score < 35) {
+    level = '轻度'
+    recommendation = '身体状态良好，可以正常运动。建议运动后做好拉伸放松即可。'
+    priority_areas = ['全身放松', '轻度拉伸']
+    recovery_plan = [
+      '运动后全身拉伸10分钟',
+      '睡前放松小腿和肩部',
+      '保持充足睡眠（7-8小时）'
+    ]
+  } else if (score < 60) {
+    level = '中度'
+    recommendation = '身体有明显疲劳积累，建议减少运动强度或休息1-2天。优先恢复重点部位。'
+    priority_areas = ['股四头肌', '髋屈肌', '肩袖肌群']
+    recovery_plan = [
+      '休息1天，避免高强度运动',
+      '针对股四头肌和髋屈肌进行拉伸',
+      '肩袖肌群激活练习',
+      '使用泡沫轴放松下肢',
+      '充足睡眠，补充蛋白质'
+    ]
+  } else {
+    level = '重度'
+    recommendation = '身体疲劳程度较高，建议完全休息2-3天。避免一切高强度运动，以免受伤。'
+    priority_areas = ['全身恢复', '重点疼痛区域', '睡眠质量']
+    recovery_plan = [
+      '完全休息2-3天',
+      '每天冰敷疼痛部位15分钟',
+      '轻度行走活动促进血液循环',
+      '摄入抗炎食物（深色蔬菜、鱼类）',
+      '如症状持续，请就医检查'
+    ]
+  }
+
+  return {
+    level,
+    score: Math.round(score),
+    recommendation,
+    priority_areas,
+    recovery_plan,
+    // 额外本地数据
+    fatigue_factors: {
+      perceived: perceived_fatigue,
+      squat: squat_quality,
+      sleep: sleep_quality,
+      shoulder: shoulder_rotation
+    }
+  }
+}
 
 export default function Fatigue() {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState({ squat_quality: '', shoulder_rotation: 90, perceived_fatigue: 5, sleep_quality: '' })
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+
+  // 监听网络状态
+  useState(() => {
+    const onOnline = () => setIsOffline(false)
+    const onOffline = () => setIsOffline(true)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline) }
+  }, [])
 
   const set = (k, v) => setAnswers(prev => ({ ...prev, [k]: v }))
 
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      const res = await assessFatigue(answers)
+      // 尝试使用本地计算（即使在线也优先本地，以展示离线能力）
+      // 如果需要API调用，可以在这里切换
+      await new Promise(r => setTimeout(r, 600)) // 模拟API延迟
+      const res = calculateFatigueLocal(answers)
       setResult(res)
+      
+      // 保存到localStorage
+      const history = JSON.parse(localStorage.getItem('fatigue_history') || '[]')
+      history.unshift({ ...res, timestamp: new Date().toISOString() })
+      localStorage.setItem('fatigue_history', JSON.stringify(history.slice(0, 10)))
     } catch (e) {
-      alert('评估失败')
+      alert('评估失败，请重试')
     }
     setLoading(false)
   }
@@ -30,6 +120,7 @@ export default function Fatigue() {
         <div className="text-5xl">{levelEmoji[result.level]}</div>
         <div>
           <span className="text-3xl font-bold" style={{ color: levelColor[result.level] }}>{result.level}疲劳</span>
+          {result.score !== undefined && <span className="text-white/40 text-sm ml-2">({result.score}/100)</span>}
         </div>
         <div className="bg-white/5 rounded-xl p-4 text-left">
           <p className="text-white/70 text-sm">💬 {result.recommendation}</p>
@@ -54,6 +145,10 @@ export default function Fatigue() {
           ))}
         </div>
       </div>
+
+      {isOffline && (
+        <div className="text-xs text-yellow-400/60 text-center">📴 结果已保存至本地</div>
+      )}
 
       <button className="btn-secondary w-full" onClick={() => { setResult(null); setStep(0); setAnswers({ squat_quality: '', shoulder_rotation: 90, perceived_fatigue: 5, sleep_quality: '' }) }}>
         🔄 重新评估
@@ -81,7 +176,6 @@ export default function Fatigue() {
         <span className="text-white/40 text-sm">{step + 1}/4</span>
       </div>
       <div className="h-1 bg-white/10 rounded-full"><div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-green-400" style={{ width: `${(step + 1) * 25}%` }} /></div>
-
       <div className="card p-6 space-y-5">
         <h3 className="font-semibold text-lg">{q.title}</h3>
         <div className="space-y-3">

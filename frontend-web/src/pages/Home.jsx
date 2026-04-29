@@ -1,4 +1,35 @@
+import { useState, useEffect } from 'react'
+
 export default function Home({ onStart }) {
+  const [recentRecords, setRecentRecords] = useState([])
+
+  useEffect(() => {
+    // 加载历史记录
+    const fatigueHistory = JSON.parse(localStorage.getItem('fatigue_history') || '[]')
+    const chatHistory = localStorage.getItem('chat_history')
+    const hasChats = chatHistory && JSON.parse(chatHistory).length > 1
+    
+    // 合并显示最近活动
+    const records = fatigueHistory.slice(0, 3).map(h => ({
+      type: 'fatigue',
+      level: h.level,
+      timestamp: h.timestamp,
+      score: h.score
+    }))
+    setRecentRecords(records)
+  }, [])
+
+  const formatTime = (iso) => {
+    const d = new Date(iso)
+    const now = new Date()
+    const diff = now - d
+    if (diff < 3600000) return `${Math.floor(diff/60000)}分钟前`
+    if (diff < 86400000) return `${Math.floor(diff/3600000)}小时前`
+    return `${Math.floor(diff/86400000)}天前`
+  }
+
+  const levelColor = { '轻度': '#00ff88', '中度': '#ffd700', '重度': '#ff4444' }
+
   const features = [
     { icon: '🧘', title: '智能拉伸编排', desc: '根据打球时长、强度、酸痛部位生成专属方案' },
     { icon: '🎙️', title: '语音实时指导', desc: '手机摄像头检测动作，AI语音实时纠错' },
@@ -20,6 +51,28 @@ export default function Home({ onStart }) {
           🚀 开始今日恢复
         </button>
       </div>
+
+      {/* 最近记录 */}
+      {recentRecords.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-white/60 text-sm font-medium px-1">📊 最近记录</h3>
+          <div className="card p-4 space-y-2">
+            {recentRecords.map((r, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">🔍</span>
+                  <span className="text-white/70">疲劳自测</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium" style={{ color: levelColor[r.level] }}>{r.level}</span>
+                  {r.score !== undefined && <span className="text-white/40 text-xs">({r.score}/100)</span>}
+                  <span className="text-white/30 text-xs">{formatTime(r.timestamp)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 功能卡片 */}
       <div className="space-y-2">
@@ -55,6 +108,13 @@ export default function Home({ onStart }) {
           </div>
         ))}
       </div>
+
+      {/* 离线状态提示 */}
+      {!navigator.onLine && (
+        <div className="card p-4 border-yellow-500/30 bg-yellow-500/5 text-center">
+          <span className="text-yellow-400 text-sm">📴 当前处于离线模式，部分功能可能受限</span>
+        </div>
+      )}
     </div>
   )
 }
