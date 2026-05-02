@@ -60,8 +60,8 @@
 │   ├── models/schemas.py   # 数据模型
 │   └── services/           # 业务逻辑服务
 │
-├── miniprogram/           # 📱 微信小程序（待开发）
-└── docs/                  # 📖 项目文档
+├── miniprogram/           # 📱 微信小程序（基础结构）
+└── .env.example           # 环境变量示例
 ```
 
 ---
